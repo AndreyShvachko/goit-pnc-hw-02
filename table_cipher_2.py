@@ -1,17 +1,6 @@
- Шифрування тексту: спершу шифр Віженера, потім табличний шифр (ключ: CRYPTO)
-
-"""
-✅ **Оновлення:**
-- 🐛 Виправлено помилки індексації та обробки матриць під час дешифрування.
-- 🔒 Спершу застосовується шифр Віженера, потім табличний шифр.
-- 🔓 Дешифрування повністю відновлює оригінальний текст.
-- ⚡ Оптимізована логіка формування та інверсії таблиці.
-"""
-
 import math
 import string
 
-# ---------------------- Шифр Віженера ----------------------
 
 def vigenere_cipher(text: str, key: str, encrypt: bool = True) -> str:
     alphabet = string.ascii_uppercase
@@ -33,7 +22,6 @@ def vigenere_cipher(text: str, key: str, encrypt: bool = True) -> str:
 
     return "".join(result)
 
-# ---------------------- Табличний шифр ----------------------
 
 def create_column_order(key: str) -> list[int]:
     return [i for _, i in sorted(zip(key, range(len(key))))]
@@ -71,7 +59,6 @@ def table_cipher(text: str, key: str, encrypt: bool = True) -> str:
 
     return result.strip()
 
-# ---------------------- Комбіноване шифрування ----------------------
 
 def combined_encrypt(text: str, vigenere_key: str, table_key: str) -> str:
     encrypted_vigenere = vigenere_cipher(text, vigenere_key, True)
@@ -81,7 +68,6 @@ def combined_decrypt(cipher_text: str, vigenere_key: str, table_key: str) -> str
     decrypted_table = table_cipher(cipher_text, table_key, False)
     return vigenere_cipher(decrypted_table, vigenere_key, False)
 
-# ---------------------- Демонстрація ----------------------
 
 if __name__ == "__main__":
     text = (
