@@ -1,107 +1,95 @@
-import math
+import string
 
+# -------------------------------
+# Табличний шифр з фразою-ключем "MATRIX"
+# -------------------------------
+class TableCipher:
+    def __init__(self, key):
+        self.key = ''.join(filter(str.isalpha, key.upper()))
 
-def create_table_key_order(key: str) -> list:
-    """
-    Створює порядок стовпців на основі ключа.
+    def encrypt(self, plaintext):
+        plaintext = ''.join(filter(str.isalpha, plaintext.upper()))
+        columns = len(self.key)
+        rows = -(-len(plaintext) // columns)  # Округлення вгору
 
-    Повертає список індексів для перестановки стовпців.
-    """
-    key = key.upper()
-    sorted_key = sorted(list(key))
+        # Заповнення таблиці рядками
+        table = [['X' for _ in range(columns)] for _ in range(rows)]
+        idx = 0
+        for r in range(rows):
+            for c in range(columns):
+                if idx < len(plaintext):
+                    table[r][c] = plaintext[idx]
+                    idx += 1
 
-    order = []
-    taken = [False] * len(key)
+        # Визначення порядку стовпців за відсортованим ключем
+        sorted_key_indices = sorted(range(columns), key=lambda i: self.key[i])
 
-    for char in sorted_key:
-        for i, k_char in enumerate(key):
-            if k_char == char and not taken[i]:
-                order.append(i)
-                taken[i] = True
-                break
+        # Формування зашифрованого тексту стовпцями
+        ciphertext = ''.join(table[r][c] for c in sorted_key_indices for r in range(rows))
+        return ciphertext
 
-    return order
+    def decrypt(self, ciphertext):
+        ciphertext = ''.join(filter(str.isalpha, ciphertext.upper()))
+        columns = len(self.key)
+        rows = -(-len(ciphertext) // columns)  # Округлення вгору
 
-def table_cipher(text: str, key: str, encrypt: bool = True) -> str:
-    """
-    Табличний шифр:
+        sorted_key_indices = sorted(range(columns), key=lambda i: self.key[i])
+        base_col_len = len(ciphertext) // columns
+        extra = len(ciphertext) % columns
+        col_lengths = [base_col_len + (1 if i < extra else 0) for i in range(columns)]
 
-    - Якщо encrypt=True: шифрування.
-    - Якщо encrypt=False: дешифрування.
-    """
-    order = create_table_key_order(key)
-    num_cols = len(order)
-    num_rows = math.ceil(len(text) / num_cols)
+        # Заповнення таблиці стовпцями відповідно до порядку ключа
+        table = [['' for _ in range(columns)] for _ in range(rows)]
+        idx = 0
+        for order, col_index in enumerate(sorted_key_indices):
+            length = col_lengths[order]
+            for r in range(length):
+                table[r][col_index] = ciphertext[idx]
+                idx += 1
 
-    # Доповнюємо текст пробілами, щоб заповнити матрицю
-    padded_text = text.ljust(num_rows * num_cols)
+        # Зчитування таблиці рядками для розшифрування
+        plaintext = ''.join(table[r][c] for r in range(rows) for c in range(columns))
+        return plaintext.rstrip('X')
 
-    # Формуємо матрицю
-    matrix = [list(padded_text[i * num_cols:(i + 1) * num_cols]) for i in range(num_rows)]
+# -------------------------------
+# Демонстрація роботи з текстом
+# -------------------------------
+plaintext = (
+    "The artist is the creator of beautiful things. To reveal art and conceal the artist is art's aim. "
+    "The critic is he who can translate into another manner or a new material his impression of beautiful things. "
+    "The highest, as the lowest, form of criticism is a mode of autobiography. "
+    "Those who find ugly meanings in beautiful things are corrupt without being charming. This is a fault. "
+    "Those who find beautiful meanings in beautiful things are the cultivated. For these there is hope. "
+    "They are the elect to whom beautiful things mean only Beauty. There is no such thing as a moral or an immoral book. "
+    "Books are well written, or badly written. That is all. The nineteenth-century dislike of realism is the rage of Caliban "
+    "seeing his own face in a glass. The nineteenth-century dislike of Romanticism is the rage of Caliban not seeing his own face in a glass. "
+    "The moral life of man forms part of the subject matter of the artist, but the morality of art consists in the perfect use of an imperfect medium. "
+    "No artist desires to prove anything. Even things that are true can be proved. No artist has ethical sympathies. "
+    "An ethical sympathy in an artist is an unpardonable mannerism of style. No artist is ever morbid. The artist can express everything. "
+    "Thought and language are to the artist instruments of an art. Vice and virtue are to the artist materials for an art. "
+    "From the point of view of form, the type of all the arts is the art of the musician. From the point of view of feeling, the actor's craft is the type. "
+    "All art is at once surface and symbol. Those who go beneath the surface do so at their peril. Those who read the symbol do so at their peril. "
+    "It is the spectator, and not life, that art really mirrors. Diversity of opinion about a work of art shows that the work is new, complex, vital. "
+    "When critics disagree the artist is in accord with himself. We can forgive a man for making a useful thing as long as he does not admire it. "
+    "The only excuse for making a useless thing is that one admires it intensely. All art is quite useless."
+)
 
-    if encrypt:
-        # Шифрування: перестановка стовпців за порядком
-        transposed = [''.join(row[i] for row in matrix) for i in order]
-    else:
-        # Дешифрування: знаходимо інверсний порядок стовпців
-        inverse_order = [order.index(i) for i in range(num_cols)]
-        transposed = [''.join(row[i] for row in matrix) for i in inverse_order]
+# Ініціалізація табличного шифра з фразою-ключем "MATRIX"
+table_key = "MATRIX"
+table_cipher = TableCipher(table_key)
 
-    return ''.join(transposed)
+# Шифрування
+encrypted_text = table_cipher.encrypt(plaintext)
 
-# ---------------------- Табличний шифр ----------------------
+# Дешифрування
+decrypted_text = table_cipher.decrypt(encrypted_text)
 
-def table_encrypt(text: str, key: str) -> str:
-    """Шифрування табличним шифром."""
-    return table_cipher(text, key, encrypt=True)
+# Форматування для порівняння
+formatted_original = ''.join(filter(str.isalpha, plaintext.upper()))
+formatted_decrypted = ''.join(filter(str.isalpha, decrypted_text.upper()))
 
-def table_decrypt(cipher_text: str, key: str) -> str:
-    """Дешифрування табличним шифром."""
-    return table_cipher(cipher_text, key, encrypt=False)
-
-# ---------------------- Демонстрація ----------------------
-
-if __name__ == "__main__":
-    # Текст із завдання (передмова до "Портрета Доріана Ґрея")
-    text = (
-        "The artist is the creator of beautiful things. To reveal art and conceal the artist is art's aim. "
-        "The critic is he who can translate into another manner or a new material his impression of beautiful things. "
-        "The highest, as the lowest, form of criticism is a mode of autobiography. "
-        "Those who find ugly meanings in beautiful things are corrupt without being charming. This is a fault. "
-        "Those who find beautiful meanings in beautiful things are the cultivated. For these there is hope. "
-        "They are the elect to whom beautiful things mean only Beauty. "
-        "There is no such thing as a moral or an immoral book. Books are well written, or badly written. That is all. "
-        "The nineteenth-century dislike of realism is the rage of Caliban seeing his own face in a glass. "
-        "The nineteenth-century dislike of Romanticism is the rage of Caliban not seeing his own face in a glass. "
-        "The moral life of man forms part of the subject matter of the artist, but the morality of art consists in the perfect use of an imperfect medium. "
-        "No artist desires to prove anything. Even things that are true can be proved. "
-        "No artist has ethical sympathies. An ethical sympathy in an artist is an unpardonable mannerism of style. "
-        "No artist is ever morbid. The artist can express everything. "
-        "Thought and language are to the artist instruments of an art. "
-        "Vice and virtue are to the artist materials for an art. "
-        "From the point of view of form, the type of all the arts is the art of the musician. "
-        "From the point of view of feeling, the actor's craft is the type. "
-        "All art is at once surface and symbol. Those who go beneath the surface do so at their peril. "
-        "Those who read the symbol do so at their peril. "
-        "It is the spectator, and not life, that art really mirrors. "
-        "Diversity of opinion about a work of art shows that the work is new, complex, vital. "
-        "When critics disagree the artist is in accord with himself. "
-        "We can forgive a man for making a useful thing as long as he does not admire it. "
-        "The only excuse for making a useless thing is that one admires it intensely. "
-        "All art is quite useless."
-    )
-
-    print("Оригінальний текст:")
-    print(text, "\n")
-
-    # Рівень 1: Табличний шифр із ключем "MATRIX"
-    key = "MATRIX"
-    encrypted_text = table_encrypt(text, key)
-    decrypted_text = table_decrypt(encrypted_text, key)
-
-    print("Табличний шифр (ключ: 'MATRIX'):")
-    print("Шифрований текст:")
-    print(encrypted_text, "\n")
-
-    print("Дешифрований текст:")
-    print(decrypted_text)
+# Результати
+print("--- РЕЗУЛЬТАТИ ---")
+print(f"Зашифрований текст (перші 300 символів):\n{encrypted_text[:300]}...")
+print(f"Дешифрований текст (перші 300 символів):\n{decrypted_text[:300]}...")
+print(f"\nСпівпадіння з оригіналом: {'Так' if formatted_original == formatted_decrypted else 'Ні'}")
